@@ -1,9 +1,12 @@
 mod eas;
+mod gm_schema;
 
 use crate::eas::{AttestationInfo, AttestationV2, OffchainAttestationVersion};
+use crate::gm_schema::GmSchemaData;
 use alloy::consensus::private::serde_json;
 use alloy::hex;
 use alloy::primitives::{Address, Signature, address};
+use alloy::sol_types::SolType;
 use eyre::{Result, ensure};
 
 fn main() -> Result<()> {
@@ -20,6 +23,7 @@ fn main() -> Result<()> {
     let attester_address = address!("0xc48117F22c8095504aFCa9795DCCbdA2BF5FBc73");
     let eas_schema_id = hex!("0x365f50a2e12159e29b002684b5c42a3c1ab67440b886b66ee9a4a9e8c8f7f528");
     let attestation_str = include_str!("../example-attest.json");
+    let expected_gm = "Binius";
 
     // Attestation link: <https://base.easscan.org/offchain/url/#attestation=eNqlkktuHDEMRO%2FS64FBUvwuPR3PJYIsKDV5gCABcvxoxhcI4tJCC1HFepS%2BH%2FgGb3jcDmcZe4M%2FTPAPInwVJxhdYILF7MLqfEkBZonzFO1eClmUlbNlVXdoYeu16yJg%2BcuEBkYRtegAih4Dhyp00VU8LvFwaVuYa7vhpd7YXD1tHxQy7djkT5%2FFjmgPouUQIsD5ODMs5Nt5zuud7g953Jd9YhYwR%2B4uYw1noL0qdmNKnzG1J%2Bczc6NLrERzHzaLXFNnoMrLZKi0QFIhoWyGmHsy%2BkRfTDl25qnGDNNdp2pVJGeUL29roU98VT5tvovnxwfpnoGdueAu6bIhQk5Mbks4bmg6GJWDb7BvHrdfP3%2FX0wK%2BJIIvSpl0P6yGiY3%2FMTg2Dz1BYs4rrb2vsaLXlVWKC9aYcoV66dBmS5FlRKNkfyIP6GGJq3Lx8eMvWFGrgQ%3D%3D>
     let attestation_info = serde_json::from_str::<AttestationInfo>(attestation_str)?;
@@ -37,6 +41,9 @@ fn main() -> Result<()> {
     ensure!(attestation.recipient == address);
     ensure!(attestation.schema == eas_schema_id);
     ensure!(attestation.expirationTime == 0); // ensure never expires
+
+    let gm_val = GmSchemaData::abi_decode(&attestation.data)?;
+    ensure!(gm_val == expected_gm);
 
     Ok(())
 }
