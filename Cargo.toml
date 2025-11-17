@@ -5,6 +5,9 @@ edition = "2024"
 
 [dependencies]
 alloy = { version = "1.1.1", features = ["eip712"] }
+binius-circuits = { git = "https://github.com/binius-zk/binius64" }
+binius-core = { git = "https://github.com/binius-zk/binius64" }
+binius-frontend = { git = "https://github.com/binius-zk/binius64" }
 eyre = "0.6.12"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
