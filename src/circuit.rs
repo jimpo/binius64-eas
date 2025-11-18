@@ -17,25 +17,25 @@ use std::{array, iter};
 const N_ADDRESS_WORDS: usize = 160usize.div_ceil(WORD_SIZE_BITS);
 
 /// [`Params`] stores the constant parameters required during circuit setup.
-struct Params {
+pub struct Params {
     /// Maximum allowed length of the message (in bytes).
-    max_msg_len: usize,
+    pub max_msg_len: usize,
     /// Maximum allowed length of the "GM" field (in bytes).
-    max_gm_len: usize,
+    pub max_gm_len: usize,
 }
 
 /// [`Instance`] stores the high-level public inputs and outputs.
-struct Instance {
-    attester_addr: Address,
-    msg: String,
-    gm_val: String,
-    signer: Address,
-    signature: Signature,
+pub struct Instance {
+    pub attester_addr: Address,
+    pub msg: String,
+    pub gm_val: String,
+    pub signer: Address,
+    pub signature: Signature,
 }
 
 /// The circuit structure stores information about the circuit wires, required for witness
 /// population.
-struct EASDemoCircuit {
+pub struct EASDemoCircuit {
     params: Params,
     attester_addr: [Wire; N_ADDRESS_WORDS],
     msg: Vec<Wire>,
@@ -50,7 +50,7 @@ struct EASDemoCircuit {
 }
 
 impl EASDemoCircuit {
-    fn build(params: Params, builder: &mut CircuitBuilder) -> Result<Self> {
+    pub fn build(params: Params, builder: &mut CircuitBuilder) -> Result<Self> {
         ensure!(params.max_msg_len.is_multiple_of(WORD_SIZE_BYTES));
         ensure!(params.max_gm_len.is_multiple_of(WORD_SIZE_BYTES));
 
@@ -106,7 +106,7 @@ impl EASDemoCircuit {
         })
     }
 
-    fn populate_witness(&self, instance: Instance, w: &mut WitnessFiller) -> Result<()> {
+    pub fn populate_witness(&self, instance: Instance, w: &mut WitnessFiller) -> Result<()> {
         let Self {
             params,
             attester_addr,

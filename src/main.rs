@@ -1,6 +1,7 @@
 mod eas;
 mod gm_schema;
 mod circuit;
+mod cli;
 
 use crate::eas::{AttestationInfo, AttestationV2, OffchainAttestationVersion};
 use crate::gm_schema::GmSchemaData;
