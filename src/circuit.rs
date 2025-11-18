@@ -264,7 +264,7 @@ mod tests {
     use alloy::hex;
     use alloy::primitives::address;
     use binius_core::verify::verify_constraints;
-    use eyre::eyre;
+	use eyre::eyre;
 
     #[test]
     fn test_correct_inputs() -> Result<()> {
@@ -305,4 +305,69 @@ mod tests {
 
         Ok(())
     }
+
+	#[test]
+	#[ignore]
+	fn test_correct_inputs_full_prove_verify() -> Result<()> {
+		use binius_prover::hash::parallel_compression::ParallelCompressionAdaptor;
+		use binius_prover::{OptimalPackedB128, Prover};
+		use binius_verifier::config::StdChallenger;
+		use binius_verifier::hash::{StdCompression, StdDigest};
+		use binius_verifier::transcript::{ProverTranscript, VerifierTranscript};
+		use binius_verifier::Verifier;
+
+		let params = Params {
+			max_msg_len: 256,
+			max_gm_len: 16,
+		};
+
+		// Set up the circuit
+		let mut builder = CircuitBuilder::new();
+		let eas_demo = EASDemoCircuit::build(params, &mut builder)?;
+		let circuit = builder.build();
+
+		// Create the high-level instance
+		let signature = Signature::from_raw(&hex!(
+            "0x3ef5a537df46dc7113fd0d7bea4534315cac6238897b92dd52fd2fc2ff1bb9fb1b1e9f842836194b139f11e9c0d1edaf5fe32099690af3fc2b766b4f8d13cb111b"
+        ))?;
+		let instance = Instance {
+			attester_addr: address!("0xc48117F22c8095504aFCa9795DCCbdA2BF5FBc73"),
+			msg:
+			"Ranked-choice voting is the single most important democracy reform needed in the US".to_string(),
+			gm_val: "Binius".to_string(),
+			signature,
+			signer: address!("0x664C7bA58aEE266307Cac0B5a8555095C1a4f7a0"),
+		};
+
+		// Populate the witness using the high-level instance data
+		let mut witness = circuit.new_witness_filler();
+		eas_demo.populate_witness(instance, &mut witness)?;
+
+		// Compute the automatically-populated internal wire values.
+		circuit.populate_wire_witness(&mut witness)?;
+
+		// Naively verify the constraints
+		let cs = circuit.constraint_system();
+		let witness_vec = witness.into_value_vec();
+		verify_constraints(cs, &witness_vec).map_err(|err| eyre!("{:?}", err))?;
+
+		// Prove/verify the circuit
+		let compression = ParallelCompressionAdaptor::new(StdCompression::default());
+		let verifier = Verifier::<StdDigest, _>::setup(cs.clone(), 1, StdCompression::default())?;
+		let prover = Prover::<OptimalPackedB128, _, StdDigest>::setup(verifier.clone(), compression)?;
+
+		let challenger = StdChallenger::default();
+		let mut prover_transcript = ProverTranscript::new(challenger.clone());
+		let public_words = witness_vec.public().to_vec();
+		prover.prove(witness_vec, &mut prover_transcript)?;
+		let proof = prover_transcript.finalize();
+
+		let mut verifier_transcript = VerifierTranscript::new(challenger, proof);
+		verifier.verify(&public_words, &mut verifier_transcript)?;
+		verifier_transcript.finalize()?;
+
+		println!("✓ proof successfully verified");
+
+		Ok(())
+	}
 }
